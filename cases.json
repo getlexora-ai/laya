@@ -1,0 +1,67 @@
+{
+  "instructions": "You are routing a calendar assistant. Read the conversation and pick the ONE action the assistant should take next for the user's latest message.",
+  "tools": {
+    "propose_blocks": "Find free time for something. The user gave no clock time, or asked us to find when: \"find time for gym this week\", \"2 hours tomorrow evening\", \"make it later\".",
+    "place_at": "Book something at the exact clock time the user said, with a start and an end or length: \"gym 6-8pm\", \"dentist friday 9:30 for 30 min\", or a reply that picks a time.",
+    "ask_clarification": "Something needed is missing or unclear, so ask first: no day, no length, a time like \"at 6\" without am/pm, or not clear which event.",
+    "find_events": "Look up existing events: what is on a day, when something is, did something get booked.",
+    "change_event": "Move, reschedule or rename an event that already exists: \"move gym to 7pm\", \"push the standup 30 min\".",
+    "delete_event": "Cancel or remove an event that already exists: \"cancel the dentist\", \"clear my afternoon\".",
+    "record_rule": "A standing rule for the future, with words like always, never, every: \"never book me before 10\", \"keep fridays free\".",
+    "block_time_off": "The user will be away or unavailable for a stretch: vacation, trip, sick, day off, wedding.",
+    "answer": "Chat that needs no calendar action: thanks, greetings, why questions, things unrelated to the calendar."
+  },
+  "cases": [
+    { "said": "I want to go to gym when can i do it, it takes 2 hours to go and come from gym", "want": "ask_clarification", "real": true },
+    { "said": "i need it for today in the evening", "before": "When would you like to fit in gym?", "want": "propose_blocks", "real": true },
+    { "said": "Gym today in the evening, 2 hours", "want": "propose_blocks", "real": true },
+    { "said": "gym today at 6pm for 2 hours", "want": "place_at", "real": true },
+    { "said": "Find three 45-minute review slots this week", "want": "propose_blocks", "real": true },
+    { "said": "17th from 6pm till 22nd 6pm i am on vacation, going to copenhagen", "want": "block_time_off", "real": true },
+    { "said": "i am going on vacation from 17th september evening till 22nd sep evening. block my calendar for that", "want": "block_time_off", "real": true },
+    { "said": "when am i going for vacation", "want": "find_events", "real": true },
+    { "said": "did you book the entire slots? or just noted?", "before": "Got it! I've noted your vacation to Copenhagen from September 17 to 22.", "want": "find_events", "real": true },
+
+    { "said": "i am planning to do gym 6-8pm", "want": "place_at" },
+    { "said": "dentist friday 9:30-10am", "want": "place_at" },
+    { "said": "call with Priya tomorrow 15:00-15:30", "want": "place_at" },
+
+    { "said": "gym at 6", "want": "ask_clarification" },
+    { "said": "run at 5:30", "want": "ask_clarification" },
+    { "said": "schedule a meeting", "want": "ask_clarification" },
+    { "said": "put yoga on my calendar", "want": "ask_clarification" },
+    { "said": "dentist tomorrow at 9am", "want": "ask_clarification" },
+    { "said": "move my meeting", "want": "ask_clarification" },
+
+    { "said": "18:00", "before": "Did you mean 18:00 or 06:00?", "want": "place_at" },
+    { "said": "1 hour", "before": "How long do you need for deep work?", "want": "propose_blocks" },
+    { "said": "Tomorrow", "before": "When would you like to fit in gym?", "want": "ask_clarification" },
+
+    { "said": "block 2 hours of deep work tomorrow morning", "want": "propose_blocks" },
+    { "said": "find me an hour this week for a haircut", "want": "propose_blocks" },
+    { "said": "too early, make it later", "before": "I've found time for a 2-hour gym session for you.", "want": "propose_blocks" },
+    { "said": "make it 90 minutes", "before": "I've found time for deep work.", "want": "propose_blocks" },
+
+    { "said": "what's on my calendar tomorrow?", "want": "find_events" },
+    { "said": "when is my next dentist appointment?", "want": "find_events" },
+
+    { "said": "move my gym to 7pm", "want": "change_event" },
+    { "said": "push the standup by 30 minutes", "want": "change_event" },
+    { "said": "rename the call to Sync with Priya", "want": "change_event" },
+
+    { "said": "cancel gym tomorrow", "want": "delete_event" },
+    { "said": "delete the dentist appointment on friday", "want": "delete_event" },
+
+    { "said": "never book me before 10", "want": "record_rule" },
+    { "said": "keep fridays meeting free", "want": "record_rule" },
+    { "said": "always leave 15 minutes after a call", "want": "record_rule" },
+
+    { "said": "I'm out friday afternoon", "want": "block_time_off" },
+    { "said": "at a wedding all weekend", "want": "block_time_off" },
+    { "said": "sick today", "want": "block_time_off" },
+
+    { "said": "why did you pick that slot?", "before": "I've found time for deep work.", "want": "answer" },
+    { "said": "thanks!", "want": "answer" },
+    { "said": "what's the weather like", "want": "answer" }
+  ]
+}

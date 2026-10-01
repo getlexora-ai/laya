@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laya Playground</title>
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --ink: #1c1c1a; --muted: #6b6b66; --line: #e3e3de;
+  --accent: #2f6fde; --accent-soft: #e6eefc; --good: #1f8a4c; --good-soft: #e3f4ea; --bad: #c4372d; --bad-soft: #fbe7e5;
+  --bar: #c9d6ee;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161615; --panel: #1f1f1d; --ink: #ececea; --muted: #9a9a94; --line: #33332f;
+    --accent: #7aa5f5; --accent-soft: #24304a; --good: #5cc98a; --good-soft: #1d3326; --bad: #f07b72; --bad-soft: #3a2220;
+    --bar: #34405a;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+h1 { font-size: 22px; margin: 0; }
+h2 { font-size: 15px; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.status { font-size: 13px; color: var(--muted); }
+.status.ok::before { content: "● "; color: var(--good); }
+.status.down::before { content: "● "; color: var(--bad); }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
+.full { grid-column: 1 / -1; }
+label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+input, textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+textarea { resize: vertical; }
+input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button:disabled { opacity: .5; cursor: wait; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.hint { font-size: 13px; color: var(--muted); }
+.result { margin-top: 16px; }
+.pick { font-size: 20px; font-weight: 650; }
+.meta { font-size: 13px; color: var(--muted); margin: 2px 0 12px; }
+.bar { display: grid; grid-template-columns: 140px 1fr 52px; gap: 8px; align-items: center; font-size: 13px; margin: 4px 0; }
+.bar .track { background: var(--bg); border-radius: 4px; height: 14px; overflow: hidden; }
+.bar .fill { background: var(--bar); height: 100%; }
+.bar.top .fill { background: var(--accent); }
+.bar.top { font-weight: 600; }
+.bar .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tool { display: grid; grid-template-columns: 150px 1fr 32px; gap: 8px; margin-bottom: 8px; align-items: start; }
+@media (max-width: 520px) { .tool { grid-template-columns: 1fr 32px; } .tool textarea { grid-column: 1 / -1; grid-row: 2; } .bar { grid-template-columns: 100px 1fr 44px; } }
+.tool input { font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+.tool textarea { font-size: 13px; min-height: 38px; }
+.x { padding: 6px 0; color: var(--muted); }
+.summary { font-size: 18px; font-weight: 650; }
+.table-wrap { overflow-x: auto; margin-top: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 500; }
+tr.miss td { background: var(--bad-soft); }
+tr.hit td:first-child { color: var(--good); }
+tr.miss td:first-child { color: var(--bad); }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { outline: 1px solid var(--line); }
+.ctx { color: var(--muted); font-size: 12px; }
+.tag { font-size: 11px; background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 1px 5px; margin-left: 4px; }
+code { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
+.err { color: var(--bad); margin-top: 10px; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Laya playground</h1>
+    <span id="status" class="status">checking…</span>
+    <span class="hint">Laya picks one tool for a message. Edit the tools, try messages, run the test set.</span>
+  </header>
+
+  <div class="grid">
+    <section>
+      <h2>Try a message</h2>
+      <label for="today">Today</label>
+      <input id="today">
+      <label for="conv">Conversation so far <span class="hint">(optional, e.g. "Assistant: Did you mean 18:00 or 06:00?")</span></label>
+      <textarea id="conv" rows="3" placeholder="(this is the first message)"></textarea>
+      <label for="msg">User's message</label>
+      <input id="msg" placeholder="gym today 6-8pm">
+      <div class="row">
+        <button id="ask" class="primary">Ask Laya</button>
+        <span class="hint">Enter to send</span>
+      </div>
+      <div id="out" class="result"></div>
+    </section>
+
+    <section>
+      <h2>Tools Laya chooses from</h2>
+      <label for="instr">Instructions</label>
+      <textarea id="instr" rows="2"></textarea>
+      <label>Tools <span class="hint">(name and what it is for; Laya only sees this text)</span></label>
+      <div id="tools"></div>
+      <div class="row">
+        <button id="add">Add tool</button>
+        <button id="reset">Reset to defaults</button>
+        <span class="hint" id="saved"></span>
+      </div>
+    </section>
+
+    <section class="full">
+      <h2>Test set</h2>
+      <div class="row" style="margin-top:0">
+        <button id="run" class="primary">Run all test messages</button>
+        <label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="misses" style="width:auto"> only misses</label>
+        <span class="hint">Uses the tools above. Click a row to try it. Takes ~20 s on Railway's CPU.</span>
+      </div>
+      <div id="summary" class="row"></div>
+      <div class="table-wrap"><table id="table" hidden>
+        <thead><tr><th></th><th>Message</th><th>Wanted</th><th>Laya picked</th><th>Confidence</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+let defaults = null;
+let cases = [];
+let lastRun = null;
+
+function nowLabel() {
+  const d = new Date();
+  return `${d.toLocaleDateString("en-GB", { weekday: "long" })} ${d.toISOString().slice(0, 10)}, ${d.toTimeString().slice(0, 5)}`;
+}
+
+// Same shape as test.ts's stateFor().
+function stateFor(conv, msg) {
+  return { today: $("today").value, conversation: conv.trim() || "(this is the first message)", latest_user_message: msg };
+}
+
+function currentTools() {
+  const out = {};
+  for (const row of $("tools").children) {
+    const name = row.querySelector("input").value.trim();
+    const desc = row.querySelector("textarea").value.trim();
+    if (name) out[name] = desc || name;
+  }
+  return out;
+}
+function question() {
+  return { tool: { type: "choice", instructions: $("instr").value.trim(), criteria: currentTools() } };
+}
+function save() {
+  store.set("laya.tools", { instructions: $("instr").value, tools: currentTools() });
+  $("saved").textContent = "saved in this browser";
+}
+
+function toolRow(name, desc) {
+  const row = document.createElement("div");
+  row.className = "tool";
+  row.innerHTML = `<input aria-label="tool name" value="${esc(name)}"><textarea aria-label="tool description" rows="2">${esc(desc)}</textarea><button class="x" aria-label="remove tool" title="Remove">✕</button>`;
+  row.querySelector("button").onclick = () => { row.remove(); save(); };
+  row.addEventListener("input", save);
+  return row;
+}
+function renderTools(cfg) {
+  $("instr").value = cfg.instructions;
+  $("tools").replaceChildren(...Object.entries(cfg.tools).map(([n, d]) => toolRow(n, d)));
+}
+
+async function call(path, body) {
+  const t0 = performance.now();
+  const res = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const ms = performance.now() - t0;
+  if (!res.ok) throw new Error(`${res.status}: ${(await res.text()).slice(0, 300)}`);
+  return { data: await res.json(), ms };
+}
+
+function bars(answer) {
+  const probs = Object.entries(answer.probabilities).sort((a, b) => b[1] - a[1]);
+  return probs.map(([name, p], i) => `
+    <div class="bar ${i === 0 ? "top" : ""}">
+      <span>${esc(name)}</span>
+      <span class="track"><span class="fill" style="width:${(p * 100).toFixed(1)}%;display:block"></span></span>
+      <span class="num">${(p * 100).toFixed(0)}%</span>
+    </div>`).join("");
+}
+
+async function ask() {
+  const msg = $("msg").value.trim();
+  if (!msg) return $("msg").focus();
+  $("ask").disabled = true;
+  $("out").innerHTML = `<p class="hint">Asking…</p>`;
+  try {
+    const { data, ms } = await call("v1/systemone", { state: stateFor($("conv").value, msg), questions: question() });
+    const a = data.answers.tool;
+    const u = data.usage ?? {};
+    $("out").innerHTML = `
+      <div class="pick">${esc(a.choice)}</div>
+      <div class="meta">confidence ${a.confidence.toFixed(2)} · ${Math.round(ms)} ms · ${u.input_tokens ?? "?"} tokens${u.truncated ? " · ⚠ input was truncated, shorten the tool descriptions" : ""}</div>
+      ${bars(a)}`;
+  } catch (e) {
+    $("out").innerHTML = `<p class="err">${esc(e.message)}</p>`;
+  } finally {
+    $("ask").disabled = false;
+  }
+}
+
+function renderRun() {
+  if (!lastRun) return;
+  const onlyMisses = $("misses").checked;
+  const rows = lastRun.rows.filter((r) => !onlyMisses || !r.hit);
+  $("table").hidden = false;
+  $("table").querySelector("tbody").innerHTML = rows.map((r) => `
+    <tr class="${r.hit ? "hit" : "miss"}" data-i="${r.i}">
+      <td>${r.hit ? "✓" : "✗"}</td>
+      <td>${esc(r.c.said)}${r.c.real ? '<span class="tag">real</span>' : ""}${r.c.before ? `<div class="ctx">after: ${esc(r.c.before)}</div>` : ""}</td>
+      <td><code>${esc(r.c.want)}</code></td>
+      <td><code>${esc(r.a.choice)}</code></td>
+      <td>${r.a.confidence.toFixed(2)}</td>
+    </tr>`).join("");
+}
+
+async function runAll() {
+  const tools = currentTools();
+  const missing = [...new Set(cases.map((c) => c.want))].filter((w) => !(w in tools));
+  $("run").disabled = true;
+  $("summary").innerHTML = `<span class="hint">Running ${cases.length} messages…</span>`;
+  try {
+    const { data, ms } = await call("v1/systemone/batch", { states: cases.map((c) => stateFor(c.before ? `Assistant: ${c.before}` : "", c.said)), questions: question() });
+    const rows = data.results.map((r, i) => ({ i, c: cases[i], a: r.answers.tool, hit: r.answers.tool.choice === cases[i].want }));
+    const ok = rows.filter((r) => r.hit).length;
+    const real = rows.filter((r) => r.c.real);
+    const trunc = data.results.filter((r) => r.usage?.truncated).length;
+    lastRun = { rows };
+    $("summary").innerHTML = `
+      <span class="summary">${ok}/${rows.length} right (${Math.round((100 * ok) / rows.length)}%)</span>
+      <span class="hint">real messages ${real.filter((r) => r.hit).length}/${real.length} · ${Math.round(ms / rows.length)} ms/message${trunc ? ` · ⚠ ${trunc} truncated` : ""}${missing.length ? ` · ⚠ no tool named ${missing.map(esc).join(", ")}, so those always miss` : ""}</span>`;
+    renderRun();
+  } catch (e) {
+    $("summary").innerHTML = `<p class="err">${esc(e.message)}</p>`;
+  } finally {
+    $("run").disabled = false;
+  }
+}
+
+$("table").addEventListener("click", (e) => {
+  const tr = e.target.closest("tr[data-i]");
+  if (!tr) return;
+  const c = cases[Number(tr.dataset.i)];
+  $("conv").value = c.before ? `Assistant: ${c.before}` : "";
+  $("msg").value = c.said;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  ask();
+});
+$("ask").onclick = ask;
+$("msg").addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); });
+$("run").onclick = runAll;
+$("misses").onchange = renderRun;
+$("add").onclick = () => { $("tools").append(toolRow("new_tool", "")); save(); };
+$("reset").onclick = () => { renderTools(defaults); save(); };
+$("instr").addEventListener("input", save);
+$("today").value = nowLabel();
+
+fetch("cases.json").then((r) => r.json()).then((d) => {
+  defaults = { instructions: d.instructions, tools: d.tools };
+  cases = d.cases;
+  renderTools(store.get("laya.tools") ?? defaults);
+});
+fetch("health").then((r) => {
+  $("status").textContent = r.ok ? "Laya is up" : `Laya answered ${r.status}`;
+  $("status").className = `status ${r.ok ? "ok" : "down"}`;
+}).catch(() => { $("status").textContent = "Laya is not reachable"; $("status").className = "status down"; });
+</script>
+</body>
+</html>
